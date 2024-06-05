@@ -2,6 +2,7 @@
 Setup Conda environment as described here: https://github.com/justin13601/ACES
 """
 import json
+import os
 from pathlib import Path
 from importlib.resources import files
 from loguru import logger
@@ -45,7 +46,7 @@ def main(cfg):
     MEDS_path = Path(cfg.MEDS_cohort_dir)
     tasks_dir = MEDS_path / tasks
 
-    task_cfg_fp = tasks_dir / cfg.task_name / "config.yaml"
+    task_cfg_fp = Path(os.environ["MED_TABS_MIMIC_IV_DIR"]) / f"{cfg.task_name}.yaml"
 
     logger.info(f"Loading task config from {str(task_cfg_fp.resolve())}")
 

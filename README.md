@@ -8,6 +8,7 @@ You should define a `.env` file with the following variables:
 
 ```bash
 MIMICIV_MEDS_DIR=[PATH TO MEDS DATASET ROOT]
+MED_TABS_MIMIC_IV_DIR=[PATH TO THIS REPO ROOT]
 ```
 
 You should clone [this repo](https://github.com/mmcdermott/MEDS_Tabular_AutoML/) and run `pip install .` from
