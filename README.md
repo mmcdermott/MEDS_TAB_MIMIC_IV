@@ -13,3 +13,11 @@ MED_TABS_MIMIC_IV_DIR=[PATH TO THIS REPO ROOT]
 
 You should clone [this repo](https://github.com/mmcdermott/MEDS_Tabular_AutoML/) and run `pip install .` from
 the branch "config".
+
+Supported tasks:
+  * `mortality/in_hospital/first_48h`
+  * `mortality/in_hospital/first_24h`
+  * `mortality/in_icu/first_48h`
+  * `mortality/in_icu/first_24h`
+  * `mortality/post_hospital_discharge/30d`
+  * `readmission/30d`

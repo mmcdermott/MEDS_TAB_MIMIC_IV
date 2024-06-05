@@ -10,7 +10,7 @@ METHOD=meds
 TASK="$1"
 OUTPUT_DIR="$2"
 N_PARALLEL_WORKERS="$3"
-WINDOW_SIZES="tabularization.window_sizes=[1d,7d,30d,365d,full]"
+WINDOW_SIZES="tabularization.window_sizes=[2h,12h,1d,7d,30d,365d,full]"
 AGGS="tabularization.aggs=[static/present,code/count,value/count,value/sum,value/sum_sqd,value/min,value/max]"
 MIN_CODE_FREQ=10
 
