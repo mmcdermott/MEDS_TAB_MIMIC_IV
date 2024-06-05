@@ -24,43 +24,42 @@ IFS=',' read -r -a TASK_ARRAY <<< "$TASKS"
 #    MEDS_cohort_dir=$MIMICIV_MEDS_DIR \
 #    tabularization.min_code_inclusion_frequency="$MIN_CODE_FREQ" "$WINDOW_SIZES" do_overwrite=False "$AGGS"
 
+# POLARS_MAX_THREADS=1
+# LOG_DIR="$MIMICIV_MEDS_DIR/.logs/tstab/"
+# mkdir -p $LOG_DIR
+# { time \
+#     mprof run --include-children --exit-code --output "$LOG_DIR/mprofile.dat" \
+#         meds-tab-tabularize-time-series \
+#             --multirun \
+#             worker="range(0,$N_PARALLEL_WORKERS)" \
+#             hydra/launcher=joblib \
+#             MEDS_cohort_dir=$MIMICIV_MEDS_DIR \
+#             tabularization.min_code_inclusion_frequency="$MIN_CODE_FREQ" do_overwrite=False \
+#             "$WINDOW_SIZES" "$AGGS" \
+#     2> $LOG_DIR/cmd.stderr
+# } 2> $LOG_DIR/timings.txt
+
+meds-tab-tabularize-time-series \
+    --multirun \
+    worker="range(0,$N_PARALLEL_WORKERS)" \
+    hydra/launcher=joblib \
+    MEDS_cohort_dir=$MIMICIV_MEDS_DIR \
+    tabularization.min_code_inclusion_frequency="$MIN_CODE_FREQ" do_overwrite=False \
+    "$WINDOW_SIZES" "$AGGS"
+
 for TASK in "${TASK_ARRAY[@]}"
 do
   echo "Extracting task $TASK"
   ./aces_task_extraction.py MEDS_cohort_dir=$MIMICIV_MEDS_DIR \
       tabularization.min_code_inclusion_frequency="$MIN_CODE_FREQ" "$WINDOW_SIZES" do_overwrite=False \
       "$AGGS" task_name=$TASK
-done
 
-
-
-POLARS_MAX_THREADS=1
-LOG_DIR="$MIMICIV_MEDS_DIR/.logs/tstab/"
-mkdir -p $LOG_DIR
-{ time \
-    mprof run --include-children --exit-code --output "$LOG_DIR/mprofile.dat" \
-        meds-tab-tabularize-time-series \
-            --multirun \
-            worker="range(0,$N_PARALLEL_WORKERS)" \
-            hydra/launcher=joblib \
-            MEDS_cohort_dir=$MIMICIV_MEDS_DIR \
-            tabularization.min_code_inclusion_frequency="$MIN_CODE_FREQ" do_overwrite=False \
-            "$WINDOW_SIZES" "$AGGS" \
-    2> $LOG_DIR/cmd.stderr
-} 2> $LOG_DIR/timings.txt
-
-mprof plot -o $LOG_DIR/mprofile.png $LOG_DIR/mprofile.dat
-mprof peak $LOG_DIR/mprofile.dat > $LOG_DIR/peak_memory_usage.txt
-
-
-for TASK in "${TASK_ARRAY[@]}"
-do
   echo "Running task_specific_caching.py: tabularizing static data"
   meds-tab-cache-task \
       MEDS_cohort_dir=$MIMICIV_MEDS_DIR \
       task_name=$TASK \
       tabularization.min_code_inclusion_frequency="$MIN_CODE_FREQ" "$WINDOW_SIZES" do_overwrite=False "$AGGS"
-  
+
   echo "Running xgboost"
   meds-tab-xgboost \
       MEDS_cohort_dir=$MIMICIV_MEDS_DIR \
