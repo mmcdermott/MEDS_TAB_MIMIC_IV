@@ -16,8 +16,8 @@ MIN_CODE_FREQ=10
 
 IFS=',' read -r -a TASK_ARRAY <<< "$TASKS"
 
-echo "Running identify_columns.py: Caching feature names and frequencies."
-meds-tab-describe MEDS_cohort_dir=$MIMICIV_MEDS_DIR
+#echo "Running identify_columns.py: Caching feature names and frequencies."
+#meds-tab-describe MEDS_cohort_dir=$MIMICIV_MEDS_DIR
 
 #echo "Running tabularize_static.py: tabularizing static data"
 #meds-tab-tabularize-static \
@@ -27,8 +27,7 @@ meds-tab-describe MEDS_cohort_dir=$MIMICIV_MEDS_DIR
 for TASK in "${TASK_ARRAY[@]}"
 do
   echo "Extracting task $TASK"
-  ./aces_task_extraction.py
-      MEDS_cohort_dir=$MIMICIV_MEDS_DIR \
+  ./aces_task_extraction.py MEDS_cohort_dir=$MIMICIV_MEDS_DIR \
       tabularization.min_code_inclusion_frequency="$MIN_CODE_FREQ" "$WINDOW_SIZES" do_overwrite=False \
       "$AGGS" task_name=$TASK
 done

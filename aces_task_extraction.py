@@ -35,7 +35,7 @@ def get_unique_time_events_df(events_df: pl.DataFrame):
     assert events_df.sort(by=["patient_id", "timestamp"]).collect().equals(events_df.collect())
     return events_df
 
-config_path = files("MEDS_tabularization").joinpath("configs")
+config_path = files("MEDS_tabular_automl").joinpath("configs")
 
 @hydra.main(version_base=None, config_path=str(config_path.resolve()), config_name="task_specific_caching")
 def main(cfg):
