@@ -12,7 +12,7 @@ from omegaconf import DictConfig, OmegaConf
 from aces import config, predicates, query
 from tqdm import tqdm
 
-from MEDS_tabular_automl.describe_codes import get_feature_columns
+from MEDS_tabular_automl.describe_codes import get_feature_columns, filter_parquet
 
 
 def get_events_df(shard_df: pl.DataFrame, feature_columns) -> pl.DataFrame:
@@ -81,7 +81,7 @@ def main(cfg):
         )
         feature_columns = get_feature_columns(cfg.tabularization.filtered_code_metadata_fp)
 
-        data_df = pl.scan_parquet(in_fp)
+        data_df = filter_parquet(in_fp, cfg.tabularization._resolved_codes)
         data_df = get_unique_time_events_df(get_events_df(data_df, feature_columns))
         data_df = data_df.drop(["code", "numerical_value"])
         data_df = data_df.with_row_index("event_id")
