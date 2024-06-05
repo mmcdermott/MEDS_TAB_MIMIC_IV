@@ -16,13 +16,13 @@ MIN_CODE_FREQ=10
 
 IFS=',' read -r -a TASK_ARRAY <<< "$TASKS"
 
-#echo "Running identify_columns.py: Caching feature names and frequencies."
-#meds-tab-describe MEDS_cohort_dir=$MIMICIV_MEDS_DIR
-
-#echo "Running tabularize_static.py: tabularizing static data"
-#meds-tab-tabularize-static \
-#    MEDS_cohort_dir=$MIMICIV_MEDS_DIR \
-#    tabularization.min_code_inclusion_frequency="$MIN_CODE_FREQ" "$WINDOW_SIZES" do_overwrite=False "$AGGS"
+# echo "Running identify_columns.py: Caching feature names and frequencies."
+# meds-tab-describe MEDS_cohort_dir=$MIMICIV_MEDS_DIR
+# 
+# echo "Running tabularize_static.py: tabularizing static data"
+# meds-tab-tabularize-static \
+#     MEDS_cohort_dir=$MIMICIV_MEDS_DIR \
+#     tabularization.min_code_inclusion_frequency="$MIN_CODE_FREQ" "$WINDOW_SIZES" do_overwrite=False "$AGGS"
 
 # POLARS_MAX_THREADS=1
 # LOG_DIR="$MIMICIV_MEDS_DIR/.logs/tstab/"
@@ -39,13 +39,13 @@ IFS=',' read -r -a TASK_ARRAY <<< "$TASKS"
 #     2> $LOG_DIR/cmd.stderr
 # } 2> $LOG_DIR/timings.txt
 
-meds-tab-tabularize-time-series \
-    --multirun \
-    worker="range(0,$N_PARALLEL_WORKERS)" \
-    hydra/launcher=joblib \
-    MEDS_cohort_dir=$MIMICIV_MEDS_DIR \
-    tabularization.min_code_inclusion_frequency="$MIN_CODE_FREQ" do_overwrite=False \
-    "$WINDOW_SIZES" "$AGGS"
+# meds-tab-tabularize-time-series \
+#     --multirun \
+#     worker="range(0,$N_PARALLEL_WORKERS)" \
+#     hydra/launcher=joblib \
+#     MEDS_cohort_dir=$MIMICIV_MEDS_DIR \
+#     tabularization.min_code_inclusion_frequency="$MIN_CODE_FREQ" do_overwrite=False \
+#     "$WINDOW_SIZES" "$AGGS"
 
 for TASK in "${TASK_ARRAY[@]}"
 do

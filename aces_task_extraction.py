@@ -12,6 +12,8 @@ from omegaconf import DictConfig, OmegaConf
 from aces import config, predicates, query
 from tqdm import tqdm
 
+from MEDS_tabular_automl.describe_codes import get_feature_columns
+
 
 def get_events_df(shard_df: pl.DataFrame, feature_columns) -> pl.DataFrame:
     """Extracts Events DataFrame with one row per observation (timestamps can be duplicated)"""
@@ -77,7 +79,7 @@ def main(cfg):
             .rename({"trigger": "timestamp", "subject_id": "patient_id"})
             .sort(by=["patient_id", "timestamp"])
         )
-        feature_columns = json.loads((tabularized_data_dir / "feature_columns.json").read_text())
+        feature_columns = get_feature_columns(cfg.tabularization.filtered_code_metadata_fp)
 
         data_df = pl.scan_parquet(in_fp)
         data_df = get_unique_time_events_df(get_events_df(data_df, feature_columns))
