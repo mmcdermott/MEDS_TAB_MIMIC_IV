@@ -1,6 +1,5 @@
-"""
-Setup Conda environment as described here: https://github.com/justin13601/ACES
-"""
+#!/usr/bin/env python 
+
 import json
 import os
 from pathlib import Path
@@ -9,6 +8,7 @@ from loguru import logger
 
 import hydra
 import polars as pl
+from omegaconf import OmegaConf
 from aces import config, predicates, query
 from tqdm import tqdm
 
