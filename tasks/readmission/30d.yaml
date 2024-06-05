@@ -1,18 +1,3 @@
-description: >- This file specifies the base configuration for the prediction of readmission to the hospital
-  within the first 30 days of discharge. There is **no** imposed gap window between the discharge and the
-  target readmission window.
-  To avoid censoring, this task _requires patients to have data more than 30 days out_ from the hospital
-  discharge. This ensures that patients who have not had a readmission _yet_ but will soon are not counted as
-  negative samples erroneously. However, as a consequence, patients who die within 30 days of discharge are
-  _not included in this population_. This is, however, appropriate, because the right way to address these
-  competing risks is to model each of them separately in an appropriately conditional manner. This task, then,
-  should be interpreted as the prediction of readmission conditional on the patient both surviving and staying
-  within the health system for more than 30 days after the hospital discharge. Prediction of the patient's
-  likelihood of mortality within 30 days of discharge is a separate task.
-  Note that this task is only suitable for datasets for which patients can be tracked across multiple
-  hospitalizations.
-  Note that this task is **hospital** readmission, not **ICU** readmission, which we do not currently explore.
-
 predicates:
   hospital_admission_0:
     code: HOSPITAL_ADMISSION//EW EMER.//EMERGENCY ROOM
@@ -164,7 +149,7 @@ predicates:
   hospital_discharge_13:
     code: HOSPITAL_DISCHARGE//HEALTHCARE FACILITY
   hospital_discharge:
-    or(hospital_discharge_0,hospital_discharge_1,hospital_discharge_2,hospital_discharge_3,hospital_discharge_4,hospital_discharge_5,hospital_discharge_6,hospital_discharge_7,hospital_discharge_8,hospital_discharge_9,hospital_discharge_10,hospital_discharge_11,hospital_discharge_12,hospital_discharge_13)
+    expr: or(hospital_discharge_0,hospital_discharge_1,hospital_discharge_2,hospital_discharge_3,hospital_discharge_4,hospital_discharge_5,hospital_discharge_6,hospital_discharge_7,hospital_discharge_8,hospital_discharge_9,hospital_discharge_10,hospital_discharge_11,hospital_discharge_12,hospital_discharge_13)
 
 trigger: hospital_discharge
 

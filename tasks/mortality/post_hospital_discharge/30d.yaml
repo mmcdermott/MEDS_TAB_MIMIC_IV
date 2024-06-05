@@ -1,9 +1,3 @@
-description: >- This file specifies the base configuration for the prediction of mortality within 30 days of
-  hospital discharge. This task features no gap window, nor does it feature any censoring protection --- e.g.,
-  patients for whom there is not data for a full 30 days post discharge _will be presumed to survive._
-  Note that this task is post-**hospital discharge** mortality, not post-**ICU discharge** mortality or in-*
-  mortality or next-30d mortality, all of which are different tasks.
-
 predicates:
   hospital_discharge_0:
     code: HOSPITAL_DISCHARGE//HOME
@@ -34,7 +28,7 @@ predicates:
   hospital_discharge_13:
     code: HOSPITAL_DISCHARGE//HEALTHCARE FACILITY
   hospital_discharge:
-    or(hospital_discharge_0,hospital_discharge_1,hospital_discharge_2,hospital_discharge_3,hospital_discharge_4,hospital_discharge_5,hospital_discharge_6,hospital_discharge_7,hospital_discharge_8,hospital_discharge_9,hospital_discharge_10,hospital_discharge_11,hospital_discharge_12,hospital_discharge_13)
+    expr: or(hospital_discharge_0,hospital_discharge_1,hospital_discharge_2,hospital_discharge_3,hospital_discharge_4,hospital_discharge_5,hospital_discharge_6,hospital_discharge_7,hospital_discharge_8,hospital_discharge_9,hospital_discharge_10,hospital_discharge_11,hospital_discharge_12,hospital_discharge_13)
   death:
     code: DEATH
 
@@ -47,7 +41,7 @@ windows:
     start_inclusive: True
     end_inclusive: True
     has:
-      death: (null, 0) # They must be alive at the time of hospital discharge
+      death: (None, 0) # They must be alive at the time of hospital discharge
   target:
     start: trigger
     end: start + 30d

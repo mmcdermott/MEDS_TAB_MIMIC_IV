@@ -8,7 +8,7 @@ from loguru import logger
 
 import hydra
 import polars as pl
-from omegaconf import OmegaConf
+from omegaconf import DictConfig, OmegaConf
 from aces import config, predicates, query
 from tqdm import tqdm
 
@@ -44,9 +44,8 @@ def main(cfg):
 
     tabularized_data_dir = Path(cfg.input_dir)
     MEDS_path = Path(cfg.MEDS_cohort_dir)
-    tasks_dir = MEDS_path / tasks
 
-    task_cfg_fp = Path(os.environ["MED_TABS_MIMIC_IV_DIR"]) / f"{cfg.task_name}.yaml"
+    task_cfg_fp = Path(os.environ["MEDS_TAB_MIMIC_IV_DIR"]) / "tasks" / f"{cfg.task_name}.yaml"
 
     logger.info(f"Loading task config from {str(task_cfg_fp.resolve())}")
 
@@ -60,7 +59,7 @@ def main(cfg):
 
     shard_fps = list(cohort_dir.glob("**/*.parquet"))
 
-    shard_fps_str = "\n".join("  * {str(fp.resolve())}" for fp in shard_fps)
+    shard_fps_str = "\n".join(f"  * {str(fp.resolve())}" for fp in shard_fps)
     logger.info(f"Processing files:\n{shard_fps_str}")
 
     for in_fp in tqdm(shard_fps):
@@ -68,7 +67,8 @@ def main(cfg):
         out_fp = output_dir / shard_pfx
         out_fp.parent.mkdir(parents=True, exist_ok=True)
         # one of the following
-        predicates_df = predicates.generate_predicates_df(task_cfg, in_fp, "meds")
+        data_cfg = DictConfig({"path": str(in_fp.resolve()), "standard": "meds", "ts_format": None})
+        predicates_df = predicates.get_predicates_df(task_cfg, data_cfg)
 
         # execute query
         df_result = query.query(task_cfg, predicates_df)
