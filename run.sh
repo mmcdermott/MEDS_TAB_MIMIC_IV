@@ -65,5 +65,6 @@ do
       MEDS_cohort_dir=$MIMICIV_MEDS_DIR \
       task_name=$TASK \
       output_dir="$OUTPUT_DIR/$TASK" \
-      tabularization.min_code_inclusion_frequency="$MIN_CODE_FREQ" "$WINDOW_SIZES" do_overwrite=False "$AGGS"
+      tabularization.min_code_inclusion_frequency="$MIN_CODE_FREQ" "$WINDOW_SIZES" do_overwrite=False "$AGGS" \
+      hydra.sweeper.direction=maximize
 done
