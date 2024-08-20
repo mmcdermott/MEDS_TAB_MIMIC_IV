@@ -45,7 +45,7 @@ windows:
     index_timestamp: end
   target:
     start: trigger
-    end: start + 30d
+    end: start + 365d
     start_inclusive: False
     end_inclusive: True
     label: death

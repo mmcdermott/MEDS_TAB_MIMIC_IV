@@ -1,13 +1,12 @@
 description: >-
-  This file specifies the base configuration for the prediction of in ICU mortality, leveraging only the first
-  48 hours of data after ICU admission, with a 24 hour gap between the input window and the target window.
-  Patients who die or are discharged from the ICU in the gap window are excluded. Patients who die in the same
-  hospital stay but in a subsequent ICU stay are **not** postiive labels for this task.
-  Note that this task is in-**ICU** mortality, not in-**hospital** mortality or **30-day** mortality, which
-  are different tasks.
-  Note that this task is predicting the outcome for a patient's entire ICU admission, not just the first 48
-  hours or the subsequent 48 hours after the trigger event. Imminent mortality (on various time-scales) are
-  different tasks.
+  This task predicts whether a patient's icu admission will be LESS than three days using only the data
+  from the first 24 hours of their admission to the icu. Only patient's whose icu stay is at least
+  48 hours will be included to avoid future leakage and the edge case of predicting immediate discharge or
+  death as a proxy for a shorter length of stay. Note that patients who die in the admission of interest are
+  still included in this task, so a prediction of a short length of stay should **not** be considered a proxy
+  for good health, as the model may be predicting a risk of early mortality rather than early discharge.
+  Note that, due to limitations of the ACES tool and the predicates it can extract, here we are really
+  predicting _short_ length of stay, not _long_ length of stay.
 
 predicates:
   icu_admission_0:
@@ -73,11 +72,10 @@ windows:
     end_inclusive: True
     has:
       icu_admission: (None, 0)
-      icu_discharge: (None, 0)
-      death: (None, 0)
+      discharge_or_death: (None, 0)
   target:
-    start: gap.end
-    end: start -> discharge_or_death
+    start: trigger
+    end: start + 3d
     start_inclusive: False
     end_inclusive: True
-    label: death
+    label: discharge_or_death

@@ -1,3 +1,4 @@
+
 description: >-
   This file specifies the base configuration for the prediction of in hospital mortality, leveraging only the
   first 48 hours of data after admission, with a 24 hour gap between the input window and the target window.
@@ -173,6 +174,7 @@ windows:
     end: trigger + 48h
     start_inclusive: True
     end_inclusive: True
+    index_timestamp: end
   gap:
     start: input.end
     end: start + 24h

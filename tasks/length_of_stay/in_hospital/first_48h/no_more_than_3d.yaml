@@ -1,13 +1,15 @@
 description: >-
-  This file specifies the base configuration for the prediction of in hospital mortality, leveraging only the
-  first 24 hours of data after admission, with a 24 hour gap between the input window and the target window.
-  Patients who die or are discharged in the gap window are excluded. Note that this task is in-**hospital**
-  mortality, not in-**ICU** mortality or **30-day** mortality, which are different tasks.
-  Note that this task is predicting the outcome for a patient's entire hospital stay, not just the first 24
-  hours or the subsequent 24 hours after the trigger event. Imminent mortality (on various time-scales) are
-  different tasks.
+  This task predicts whether a patient's hospital admission will be LESS than three days using only the data
+  from the first 24 hours of their admission to the hospital. Only patient's whose hospital stay is at least
+  48 hours will be included to avoid future leakage and the edge case of predicting immediate discharge or
+  death as a proxy for a shorter length of stay. Note that patients who die in the admission of interest are
+  still included in this task, so a prediction of a short length of stay should **not** be considered a proxy
+  for good health, as the model may be predicting a risk of early mortality rather than early discharge.
+  Note that, due to limitations of the ACES tool and the predicates it can extract, here we are really
+  predicting _short_ length of stay, not _long_ length of stay.
 
 predicates:
+  # Hospital Admission
   hospital_admission_0:
     code: HOSPITAL_ADMISSION//EW EMER.//EMERGENCY ROOM
   hospital_admission_1:
@@ -159,7 +161,7 @@ predicates:
     code: HOSPITAL_DISCHARGE//HEALTHCARE FACILITY
   hospital_discharge:
     expr: or(hospital_discharge_0,hospital_discharge_1,hospital_discharge_2,hospital_discharge_3,hospital_discharge_4,hospital_discharge_5,hospital_discharge_6,hospital_discharge_7,hospital_discharge_8,hospital_discharge_9,hospital_discharge_10,hospital_discharge_11,hospital_discharge_12,hospital_discharge_13)
-
+  
   death:
     code: DEATH
   discharge_or_death:
@@ -170,7 +172,7 @@ trigger: hospital_admission
 windows:
   input:
     start: NULL
-    end: trigger + 24h
+    end: trigger + 48h
     start_inclusive: True
     end_inclusive: True
     index_timestamp: end
@@ -181,11 +183,10 @@ windows:
     end_inclusive: True
     has:
       hospital_admission: (None, 0)
-      hospital_discharge: (None, 0)
-      death: (None, 0)
+      discharge_or_death: (None, 0)
   target:
-    start: gap.end
-    end: start -> discharge_or_death
+    start: trigger
+    end: start + 3d
     start_inclusive: False
     end_inclusive: True
-    label: death
+    label: discharge_or_death
