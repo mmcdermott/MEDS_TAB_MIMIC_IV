@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# bash hf_cohort/hf_cohort_e2e.sh $TASK $OUTPUT_DIR $N_WORKERS
+# bash run.sh $TASK $OUTPUT_DIR $N_WORKERS
 
 set -e
 
@@ -8,20 +8,23 @@ export $(cat .env | xargs)
 METHOD=meds
 
 TASKS="$1"
-OUTPUT_DIR="$2"
-N_PARALLEL_WORKERS="$3"
+N_PARALLEL_WORKERS="$2"
+MIMICIV_MEDS_DIR="$3"
+MEDS_TAB_COHORT_DIR="$4"
 WINDOW_SIZES="tabularization.window_sizes=[2h,12h,1d,7d,30d,365d,full]"
 AGGS="tabularization.aggs=[static/present,code/count,value/count,value/sum,value/sum_sqd,value/min,value/max]"
 MIN_CODE_FREQ=10
 
 IFS=',' read -r -a TASK_ARRAY <<< "$TASKS"
 
-# echo "Running identify_columns.py: Caching feature names and frequencies."
-# meds-tab-describe MEDS_cohort_dir=$MIMICIV_MEDS_DIR
-# 
-# echo "Running tabularize_static.py: tabularizing static data"
+# # describe codes
+# echo "Describing codes"
+# meds-tab-describe \
+#     MEDS_cohort_dir="$MIMICIV_MEDS_DIR" output_cohort_dir="$MEDS_TAB_COHORT_DIR"
+
+# echo "Tabularizing static data"
 # meds-tab-tabularize-static \
-#     MEDS_cohort_dir=$MIMICIV_MEDS_DIR \
+#     MEDS_cohort_dir=$MIMICIV_MEDS_DIR output_cohort_dir="$MEDS_TAB_COHORT_DIR" \
 #     tabularization.min_code_inclusion_frequency="$MIN_CODE_FREQ" "$WINDOW_SIZES" do_overwrite=False "$AGGS"
 
 # POLARS_MAX_THREADS=1
@@ -33,7 +36,7 @@ IFS=',' read -r -a TASK_ARRAY <<< "$TASKS"
 #             --multirun \
 #             worker="range(0,$N_PARALLEL_WORKERS)" \
 #             hydra/launcher=joblib \
-#             MEDS_cohort_dir=$MIMICIV_MEDS_DIR \
+#             MEDS_cohort_dir=$MIMICIV_MEDS_DIR output_cohort_dir="$MEDS_TAB_COHORT_DIR"\
 #             tabularization.min_code_inclusion_frequency="$MIN_CODE_FREQ" do_overwrite=False \
 #             "$WINDOW_SIZES" "$AGGS" \
 #     2> $LOG_DIR/cmd.stderr
@@ -43,28 +46,29 @@ IFS=',' read -r -a TASK_ARRAY <<< "$TASKS"
 #     --multirun \
 #     worker="range(0,$N_PARALLEL_WORKERS)" \
 #     hydra/launcher=joblib \
-#     MEDS_cohort_dir=$MIMICIV_MEDS_DIR \
+#     MEDS_cohort_dir=$MIMICIV_MEDS_DIR output_cohort_dir="$MEDS_TAB_COHORT_DIR" \
 #     tabularization.min_code_inclusion_frequency="$MIN_CODE_FREQ" do_overwrite=False \
 #     "$WINDOW_SIZES" "$AGGS"
 
 for TASK in "${TASK_ARRAY[@]}"
 do
   echo "Extracting task $TASK"
-  ./aces_task_extraction.py MEDS_cohort_dir=$MIMICIV_MEDS_DIR \
+  export MEDS_TAB_MIMIC_IV_DIR=./
+  export POLARS_MAX_THREADS=256
+  ./aces_task_extraction.py MEDS_cohort_dir=$MIMICIV_MEDS_DIR output_cohort_dir="$MEDS_TAB_COHORT_DIR" \
       tabularization.min_code_inclusion_frequency="$MIN_CODE_FREQ" "$WINDOW_SIZES" do_overwrite=False \
       "$AGGS" task_name=$TASK
+  export POLARS_MAX_THREADS=2
+#   echo "Running task_specific_caching.py: tabularizing static data"
+#   meds-tab-cache-task \
+#       MEDS_cohort_dir=$MIMICIV_MEDS_DIR output_cohort_dir="$MEDS_TAB_COHORT_DIR" \
+#       input_label_dir="$MEDS_TAB_COHORT_DIR/$TASK" \
+#       tabularization.min_code_inclusion_frequency="$MIN_CODE_FREQ" "$WINDOW_SIZES" do_overwrite=False "$AGGS"
 
-  echo "Running task_specific_caching.py: tabularizing static data"
-  meds-tab-cache-task \
-      MEDS_cohort_dir=$MIMICIV_MEDS_DIR \
-      task_name=$TASK \
-      tabularization.min_code_inclusion_frequency="$MIN_CODE_FREQ" "$WINDOW_SIZES" do_overwrite=False "$AGGS"
-
-  echo "Running xgboost"
-  meds-tab-xgboost \
-      MEDS_cohort_dir=$MIMICIV_MEDS_DIR \
-      task_name=$TASK \
-      output_dir="$OUTPUT_DIR/$TASK" \
-      tabularization.min_code_inclusion_frequency="$MIN_CODE_FREQ" "$WINDOW_SIZES" do_overwrite=False "$AGGS" \
-      hydra.sweeper.direction=maximize
+#   echo "Running xgboost"
+#   meds-tab-xgboost \
+#       MEDS_cohort_dir=$MIMICIV_MEDS_DIR output_cohort_dir="$MEDS_TAB_COHORT_DIR" \
+#       task_name=$TASK \
+#       tabularization.min_code_inclusion_frequency="$MIN_CODE_FREQ" "$WINDOW_SIZES" do_overwrite=False "$AGGS" \
+#       hydra.sweeper.direction=maximize
 done

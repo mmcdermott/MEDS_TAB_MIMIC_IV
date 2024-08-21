@@ -21,20 +21,20 @@ def get_events_df(shard_df: pl.DataFrame, feature_columns) -> pl.DataFrame:
     raw_feature_columns = ["/".join(c.split("/")[:-1]) for c in feature_columns]
     shard_df = shard_df.filter(pl.col("code").is_in(raw_feature_columns))
     # Drop rows with missing timestamp or code to get events
-    ts_shard_df = shard_df.drop_nulls(subset=["timestamp", "code"])
+    ts_shard_df = shard_df.drop_nulls(subset=["time", "code"])
     return ts_shard_df
 
 
 def get_unique_time_events_df(events_df: pl.DataFrame):
     """Updates Events DataFrame to have unique timestamps and sorted by patient_id and timestamp."""
-    assert events_df.select(pl.col("timestamp")).null_count().collect().item() == 0
+    assert events_df.select(pl.col("time")).null_count().collect().item() == 0
     # Check events_df is sorted - so it aligns with the ts_matrix we generate later in the pipeline
     events_df = (
-        events_df.drop_nulls("timestamp")
-        .select(pl.col(["patient_id", "timestamp"]))
+        events_df.drop_nulls("time")
+        .select(pl.col(["patient_id", "time"]))
         .unique(maintain_order=True)
     )
-    assert events_df.sort(by=["patient_id", "timestamp"]).collect().equals(events_df.collect())
+    assert events_df.sort(by=["patient_id", "time"]).collect().equals(events_df.collect())
     return events_df
 
 config_path = files("MEDS_tabular_automl").joinpath("configs")
@@ -55,9 +55,9 @@ def main(cfg):
     task_cfg = config.TaskExtractorConfig.load(config_path=task_cfg_fp)
 
     # location of MEDS format Data
-    cohort_dir = MEDS_path / "final_cohort"
+    cohort_dir = MEDS_path / "data"
     # output directory for tables with event_ids and labels
-    output_dir = MEDS_path / cfg.task_name / "labels"
+    output_dir = Path(cfg.output_cohort_dir) / cfg.task_name / "labels"
 
     shard_fps = list(cohort_dir.glob("**/*.parquet"))
 
@@ -68,6 +68,9 @@ def main(cfg):
         shard_pfx = str(in_fp.relative_to(MEDS_path))
         out_fp = output_dir / shard_pfx
         out_fp.parent.mkdir(parents=True, exist_ok=True)
+        if out_fp.exists():
+            logger.info(f"Skipping {shard_pfx} as it already exists.")
+            continue
         # one of the following
         data_cfg = DictConfig({"path": str(in_fp.resolve()), "standard": "meds", "ts_format": None})
         predicates_df = predicates.get_predicates_df(task_cfg, data_cfg)
@@ -76,17 +79,17 @@ def main(cfg):
         df_result = query.query(task_cfg, predicates_df)
         label_df = (
             df_result.select(pl.col(["subject_id", "trigger", "label"]))
-            .rename({"trigger": "timestamp", "subject_id": "patient_id"})
-            .sort(by=["patient_id", "timestamp"])
+            .rename({"trigger": "time", "subject_id": "patient_id"})
+            .sort(by=["patient_id", "time"])
         )
         feature_columns = get_feature_columns(cfg.tabularization.filtered_code_metadata_fp)
 
         data_df = filter_parquet(in_fp, cfg.tabularization._resolved_codes)
         data_df = get_unique_time_events_df(get_events_df(data_df, feature_columns))
-        data_df = data_df.drop(["code", "numerical_value"])
+        data_df = data_df.drop(["code", "numeric_value"])
         data_df = data_df.with_row_index("event_id")
 
-        output_df = label_df.lazy().join_asof(other=data_df, by="patient_id", on="timestamp")
+        output_df = label_df.lazy().join_asof(other=data_df, by="patient_id", on="time")
 
         # store it
         output_df.collect().write_parquet(out_fp, use_pyarrow=True)
