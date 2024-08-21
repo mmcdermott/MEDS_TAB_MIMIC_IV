@@ -54,16 +54,21 @@ for TASK in "${TASK_ARRAY[@]}"
 do
   echo "Extracting task $TASK"
   export MEDS_TAB_MIMIC_IV_DIR=./
-  export POLARS_MAX_THREADS=256
-  ./aces_task_extraction.py MEDS_cohort_dir=$MIMICIV_MEDS_DIR output_cohort_dir="$MEDS_TAB_COHORT_DIR" \
+  ./aces_task_extraction.py \
+      --multirun \
+      worker="range(0,$N_PARALLEL_WORKERS)" \
+      hydra/launcher=joblib \
+      MEDS_cohort_dir=$MIMICIV_MEDS_DIR output_cohort_dir="$MEDS_TAB_COHORT_DIR" \
       tabularization.min_code_inclusion_frequency="$MIN_CODE_FREQ" "$WINDOW_SIZES" do_overwrite=False \
       "$AGGS" task_name=$TASK
-  export POLARS_MAX_THREADS=2
-#   echo "Running task_specific_caching.py: tabularizing static data"
-#   meds-tab-cache-task \
-#       MEDS_cohort_dir=$MIMICIV_MEDS_DIR output_cohort_dir="$MEDS_TAB_COHORT_DIR" \
-#       input_label_dir="$MEDS_TAB_COHORT_DIR/$TASK" \
-#       tabularization.min_code_inclusion_frequency="$MIN_CODE_FREQ" "$WINDOW_SIZES" do_overwrite=False "$AGGS"
+  # echo "Running task_specific_caching.py: tabularizing static data"
+  # meds-tab-cache-task \
+  #     --multirun \
+  #     worker="range(0,$N_PARALLEL_WORKERS)" \
+  #     hydra/launcher=joblib \
+  #     MEDS_cohort_dir=$MIMICIV_MEDS_DIR output_cohort_dir="$MEDS_TAB_COHORT_DIR" \
+  #     input_label_dir="$MEDS_TAB_COHORT_DIR/$TASK" \
+  #     tabularization.min_code_inclusion_frequency="$MIN_CODE_FREQ" "$WINDOW_SIZES" do_overwrite=False "$AGGS" tqdm=True
 
 #   echo "Running xgboost"
 #   meds-tab-xgboost \

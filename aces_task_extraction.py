@@ -11,8 +11,10 @@ import polars as pl
 from omegaconf import DictConfig, OmegaConf
 from aces import config, predicates, query
 from tqdm import tqdm
+import numpy as np
 
 from MEDS_tabular_automl.describe_codes import get_feature_columns, filter_parquet
+from mapper import wrap as rwlock_wrap
 
 
 def get_events_df(shard_df: pl.DataFrame, feature_columns) -> pl.DataFrame:
@@ -60,21 +62,13 @@ def main(cfg):
     output_dir = Path(cfg.output_cohort_dir) / cfg.task_name / "labels"
 
     shard_fps = list(cohort_dir.glob("**/*.parquet"))
+    np.random.shuffle(shard_fps)
 
     shard_fps_str = "\n".join(f"  * {str(fp.resolve())}" for fp in shard_fps)
     logger.info(f"Processing files:\n{shard_fps_str}")
-
-    for in_fp in tqdm(shard_fps):
-        shard_pfx = str(in_fp.relative_to(MEDS_path))
-        out_fp = output_dir / shard_pfx
-        out_fp.parent.mkdir(parents=True, exist_ok=True)
-        if out_fp.exists():
-            logger.info(f"Skipping {shard_pfx} as it already exists.")
-            continue
-        # one of the following
+    def read_fn(in_fp):
         data_cfg = DictConfig({"path": str(in_fp.resolve()), "standard": "meds", "ts_format": None})
         predicates_df = predicates.get_predicates_df(task_cfg, data_cfg)
-
         # execute query
         df_result = query.query(task_cfg, predicates_df)
         label_df = (
@@ -88,12 +82,26 @@ def main(cfg):
         data_df = get_unique_time_events_df(get_events_df(data_df, feature_columns))
         data_df = data_df.drop(["code", "numeric_value"])
         data_df = data_df.with_row_index("event_id")
-
         output_df = label_df.lazy().join_asof(other=data_df, by="patient_id", on="time")
-
+        return output_df
+    def compute_fn(df):
+        return df
+    def write_fp(output_df, out_fp):
         # store it
         output_df.collect().write_parquet(out_fp, use_pyarrow=True)
         logger.info(f"Done with {shard_pfx}!")
+
+    for in_fp in tqdm(shard_fps):
+        shard_pfx = str(in_fp.relative_to(MEDS_path))
+        out_fp = output_dir / shard_pfx
+        out_fp.parent.mkdir(parents=True, exist_ok=True)
+        # one of the following
+        
+        rwlock_wrap(in_fp, out_fp, read_fn, write_fp, compute_fn, do_overwrite=cfg.do_overwrite, do_return=False)
+        
+
+        
+        
 
 
 if __name__ == "__main__":
