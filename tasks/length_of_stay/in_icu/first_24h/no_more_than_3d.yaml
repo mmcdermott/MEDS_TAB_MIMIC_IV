@@ -9,48 +9,10 @@ description: >-
   predicting _short_ length of stay, not _long_ length of stay.
 
 predicates:
-  icu_admission_0:
-    code: ICU_ADMISSION//Medical Intensive Care Unit (MICU)
-  icu_admission_1:
-    code: ICU_ADMISSION//Medical/Surgical Intensive Care Unit (MICU/SICU)
-  icu_admission_2:
-    code: ICU_ADMISSION//Cardiac Vascular Intensive Care Unit (CVICU)
-  icu_admission_3:
-    code: ICU_ADMISSION//Surgical Intensive Care Unit (SICU)
-  icu_admission_4:
-    code: ICU_ADMISSION//Trauma SICU (TSICU)
-  icu_admission_5:
-    code: ICU_ADMISSION//Coronary Care Unit (CCU)
-  icu_admission_6:
-    code: ICU_ADMISSION//Neuro Intermediate
-  icu_admission_7:
-    code: ICU_ADMISSION//Neuro Surgical Intensive Care Unit (Neuro SICU)
-  icu_admission_8:
-    code: ICU_ADMISSION//Neuro Stepdown
   icu_admission:
-    expr: or(icu_admission_0,icu_admission_1,icu_admission_2,icu_admission_3,icu_admission_4,icu_admission_5,icu_admission_6,icu_admission_7,icu_admission_8)
-
-  icu_discharge_0:
-    code: ICU_DISCHARGE//Medical Intensive Care Unit (MICU)
-  icu_discharge_1:
-    code: ICU_DISCHARGE//Medical/Surgical Intensive Care Unit (MICU/SICU)
-  icu_discharge_2:
-    code: ICU_DISCHARGE//Cardiac Vascular Intensive Care Unit (CVICU)
-  icu_discharge_3:
-    code: ICU_DISCHARGE//Surgical Intensive Care Unit (SICU)
-  icu_discharge_4:
-    code: ICU_DISCHARGE//Coronary Care Unit (CCU)
-  icu_discharge_5:
-    code: ICU_DISCHARGE//Trauma SICU (TSICU)
-  icu_discharge_6:
-    code: ICU_DISCHARGE//Neuro Intermediate
-  icu_discharge_7:
-    code: ICU_DISCHARGE//Neuro Stepdown
-  icu_discharge_8:
-    code: ICU_DISCHARGE//Neuro Surgical Intensive Care Unit (Neuro SICU)
+    code: {regex: "ICU_ADMISSION//.*"}
   icu_discharge:
-    expr: or(icu_discharge_0,icu_discharge_1,icu_discharge_2,icu_discharge_3,icu_discharge_4,icu_discharge_5,icu_discharge_6,icu_discharge_7,icu_discharge_8)
-
+    code: {regex: "ICU_DISCHARGE//.*"}
   death:
     code: DEATH
   discharge_or_death:

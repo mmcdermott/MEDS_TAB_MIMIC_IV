@@ -11,6 +11,8 @@ TASKS="$1"
 N_PARALLEL_WORKERS="$2"
 MIMICIV_MEDS_DIR="$3"
 MEDS_TAB_COHORT_DIR="$4"
+CONDA_PATH="$5"
+ACES_CONDA_ENV_NAME="$6"
 WINDOW_SIZES="tabularization.window_sizes=[2h,12h,1d,7d,30d,365d,full]"
 AGGS="tabularization.aggs=[static/present,code/count,value/count,value/sum,value/sum_sqd,value/min,value/max]"
 MIN_CODE_FREQ=10
@@ -50,25 +52,22 @@ IFS=',' read -r -a TASK_ARRAY <<< "$TASKS"
 #     tabularization.min_code_inclusion_frequency="$MIN_CODE_FREQ" do_overwrite=False \
 #     "$WINDOW_SIZES" "$AGGS"
 
+# # Copy tasks to cohort directory
+# rsync -r tasks/ ${MEDS_TAB_COHORT_DIR}/tasks
+
 for TASK in "${TASK_ARRAY[@]}"
 do
-  echo "Extracting task $TASK"
-  export MEDS_TAB_MIMIC_IV_DIR=./
-  ./aces_task_extraction.py \
+  # echo "Extracting task $TASK"
+  # bash -i aces_task_extraction.sh $CONDA_PATH $MEDS_TAB_COHORT_DIR ${MEDS_TAB_COHORT_DIR}/tasks $TASK $ACES_CONDA_ENV_NAME
+
+  echo "Running task_specific_caching.py: tabularizing static data"
+  meds-tab-cache-task \
       --multirun \
       worker="range(0,$N_PARALLEL_WORKERS)" \
       hydra/launcher=joblib \
       MEDS_cohort_dir=$MIMICIV_MEDS_DIR output_cohort_dir="$MEDS_TAB_COHORT_DIR" \
-      tabularization.min_code_inclusion_frequency="$MIN_CODE_FREQ" "$WINDOW_SIZES" do_overwrite=False \
-      "$AGGS" task_name=$TASK
-  # echo "Running task_specific_caching.py: tabularizing static data"
-  # meds-tab-cache-task \
-  #     --multirun \
-  #     worker="range(0,$N_PARALLEL_WORKERS)" \
-  #     hydra/launcher=joblib \
-  #     MEDS_cohort_dir=$MIMICIV_MEDS_DIR output_cohort_dir="$MEDS_TAB_COHORT_DIR" \
-  #     input_label_dir="$MEDS_TAB_COHORT_DIR/$TASK" \
-  #     tabularization.min_code_inclusion_frequency="$MIN_CODE_FREQ" "$WINDOW_SIZES" do_overwrite=False "$AGGS" tqdm=True
+      input_label_dir="$MEDS_TAB_COHORT_DIR/tasks/$TASK" \
+      tabularization.min_code_inclusion_frequency="$MIN_CODE_FREQ" "$WINDOW_SIZES" do_overwrite=False "$AGGS" tqdm=True
 
 #   echo "Running xgboost"
 #   meds-tab-xgboost \
